@@ -2,6 +2,8 @@
 
 This is an assembly emulator for the assembly language shown in cambridge A level computer science. Find a list of instructions in instruction_list.txt. Find example code in the examples directory. Note there are a couple of extra instructions (which can only be used by specifying the '-extra' flag.
 
+Known limitation: cannot make a label called 'B' or '#' since they indicate the start of a number
+
 # Building
 
 To build ala.exe you need either MSVC or gcc installed.
