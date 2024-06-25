@@ -21,7 +21,7 @@ Using gcc:
 
 It is recommended to put ala.exe in a directory that is in the PATH if you want to use it frequently.
 
-You can download pre-built binaries for the debugger [here](https://github.com/victor-Lopez25/A-Level-Assembly-Emulator/releases).
+You can download pre-built binaries for ala.exe [here](https://github.com/victor-Lopez25/A-Level-Assembly-Emulator/releases).
 
 ## Licenses
 
