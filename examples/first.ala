@@ -1,0 +1,9 @@
+START: LDD a
+       OUT
+	   LDD l
+       OUT
+	   LDD a
+       OUT
+	   END
+a: 97
+l: 108

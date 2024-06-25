@@ -1,0 +1,9 @@
+START:
+LDM #32 // start printable
+loopStart:
+OUT
+INC ACC
+CMP lastAscii
+JPN loopStart
+END
+lastAscii: 255

@@ -1,0 +1,9 @@
+Print:
+LDR #0
+PrintLoopStart:
+LDX PrintData
+OUT
+INC IX
+CMP #0
+JPN PrintLoopStart
+RETURN

@@ -1,0 +1,8 @@
+START: 
+LDD data
+infinite:
+OUT
+JMP infinite
+
+END
+data: 70

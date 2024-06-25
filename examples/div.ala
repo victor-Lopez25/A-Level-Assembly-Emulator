@@ -1,0 +1,43 @@
+// integer division with remainder
+// a/b
+// no substraction so must make a negative number
+// (a - b == a + (-b))
+// Must use flag -print-numbers
+START:
+LDD b
+XOR #&FFFFFFFF // everything is an int, so 4 bytes
+INC ACC
+STO negB
+
+LDD a
+startloop:
+ADD negB
+STO remainder
+
+// dark magic to compute ACC > 0
+XOR #&FFFFFFFF
+INC ACC
+AND #&80000000 // clear positive bits
+CMP #0
+LDD result
+INC ACC
+STO result
+LDD remainder
+JPN startloop
+
+ADD b
+OUT
+STO remainder
+
+LDD result
+DEC ACC
+OUT
+STO result
+
+END
+
+a: 22
+b: 4
+negB: 0
+result: 0
+remainder: 0

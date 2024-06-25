@@ -1,0 +1,16 @@
+START:
+startloop:
+LDX strStart
+OUT
+INC IX
+CMP #0
+JPN startloop
+END
+
+strStart: 65
+66
+67
+68
+69
+70
+strEnd: 0

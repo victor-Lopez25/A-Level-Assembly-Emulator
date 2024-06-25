@@ -1,0 +1,4 @@
+PrintChar:
+LDD PrintCharData
+OUT
+RETURN

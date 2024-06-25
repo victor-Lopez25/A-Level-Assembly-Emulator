@@ -1,0 +1,5 @@
+START: LDD data1 // comment1
+       OUT // comment2
+	   END
+data1: 65 // comment4
+// comment5

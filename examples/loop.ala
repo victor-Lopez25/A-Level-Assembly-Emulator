@@ -1,0 +1,43 @@
+START: 
+// for loop
+forStart: 
+LDD data1
+OUT
+
+LDD index
+INC ACC
+STO index
+CMP amount
+JPN forStart
+
+LDM #10 // newline character
+OUT
+
+// while loop
+while1start:
+LDD data2
+OUT
+INC ACC
+STO data2
+CMP data1
+JPN while1start
+// ACC is only used for data2 so this is unnecessary!
+
+LDM #10 // newline character
+OUT
+
+// while 2, without unnecessary STO instruction
+LDD data3
+while2start:
+OUT
+INC ACC
+CMP data1
+JPN while2start
+
+END
+
+index: 0
+data1: 70
+amount: 5
+data2: 65
+data3: 65

@@ -1,0 +1,24 @@
+START:
+CALL Print
+
+LDR #0
+LDM #70
+STX PrintData
+
+DEC ACC
+INC IX
+STX PrintData
+
+INC IX
+LDM #0
+STX PrintData
+
+CALL Print
+
+END
+
+PrintData: 65
+66
+67
+0
+0

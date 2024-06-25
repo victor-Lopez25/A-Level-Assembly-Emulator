@@ -1,0 +1,23 @@
+// A*B is the same as A+A+...+A (B times)
+// To execute this example use the flag -print-numbers
+// actual assembly has instructions for this
+START:
+LDD a
+loopStart:
+ADD a
+STO result
+LDD index
+INC ACC
+STO index
+CMP b
+LDD result
+JPN loopStart
+
+OUT
+
+END
+
+index: 1
+result: 0
+a: 10
+b: 5

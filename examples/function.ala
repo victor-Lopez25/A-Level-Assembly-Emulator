@@ -1,0 +1,16 @@
+START: 
+CALL print
+
+LDD data
+DEC ACC
+STO data
+
+CALL print
+END
+
+print:
+LDD data
+OUT
+RETURN
+
+data: 70

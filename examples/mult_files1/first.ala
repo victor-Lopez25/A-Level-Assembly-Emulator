@@ -1,0 +1,5 @@
+START:
+CALL PrintChar
+END
+
+PrintCharData: 70
