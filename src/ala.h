@@ -7,6 +7,7 @@ typedef enum {
     NO_JMP_LIMIT = 1,
     PRINT_NUMBERS = 2,
     ALA_EXTRA = 4,
+    ALA_DEBUG = 8,
 } ala_flags;
 
 typedef int8_t s8;
@@ -95,7 +96,7 @@ typedef enum {
     IOP_CALL = 25, // This is an extra -> doesn't exist in A level assembly
     IOP_RETURN = 26, // This is an extra -> doesn't exist in A level assembly
     
-    // IOP_JMI // indirect jump
+    // IOP_JPI // indirect jump
     
     IOP_COUNT,
 } instruction_code;
@@ -138,6 +139,7 @@ typedef struct {
     memory_arena **Arena;
     tmp_cstr *tc;
     String_View *File;
+    String_View **ProgramLines;
     int FileIndex;
     line_of_code *Program;
     

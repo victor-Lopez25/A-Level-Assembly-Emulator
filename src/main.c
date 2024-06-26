@@ -91,6 +91,7 @@ void Usage(void)
         printf("Flags:\n"
                "no-jmp-limits: Removes the jump limits, in case you want infinite loops\n"
                "print-numbers: OUT instruction will print integers instead of characters\n"
+               "debug: Stop in each instruction and show ACC and IX register values by typing 'registers' or 'r'\n"
                "extra: Adds in a couple extra instructions to make using this assembly easier\n\n"
                "Extra instructions:\n"
                "CALL <label>: Records the current address and jumps to label\n"
@@ -391,6 +392,7 @@ size_t ParseCode(String_View Content, lexer *Lexer, int Flags,
     for(size_t CurrentLine = 0; Content.count > 0; CurrentLine++)
     {
         String_View Line = sv_trim(sv_chop_by_delim(&Content, '\n'));
+        Lexer->ProgramLines[Lexer->FileIndex][CurrentLine] = Line;
         LineMappings[CurrentLine].LOC = CurrentLOC;
         if(Line.count == 0) {
             LineMappings[CurrentLine].Data = PushStruct(Lexer->Arena, long int);
@@ -554,6 +556,16 @@ line = LineMappings[AddressFileIndex][LOC->Operand].LOC - 1; \
 CheckJumpLimit(Lexer->Program[line].LineInFile); \
 CurrentFileIndex = AddressFileIndex;
 
+void ShowStepCommands()
+{
+    printf("Commands:\n"
+           "help (h): Show commands\n"
+           "next (n/[enter]): Go to the next instruction\n"
+           "registers (r): Show the values in the ACC and IX registers\n"
+           "continue (c): Continue the execution (won't print executed instructions)\n"
+           "quit (q): Quit ALA debugger\n");
+}
+
 void Evaluate(String_View *FileNames, lexer *Lexer, 
               line_map **LineMappings, size_t *LineCounts, size_t ProgramLength, int Flags) {
     int ACC = 0; // accumulator
@@ -563,12 +575,22 @@ void Evaluate(String_View *FileNames, lexer *Lexer,
     int CurrentFileIndex = Lexer->StartSymbol->FileIndex;
     int PreviousFileIndex = Lexer->StartSymbol->FileIndex;
     
+    int StepThroughCode = IsSet(Flags, ALA_DEBUG);
+    if(StepThroughCode) {
+        ShowStepCommands();
+    }
+    
     for(size_t line = Lexer->StartLOC;
         line < ProgramLength;
         line++)
     {
         line_of_code *LOC = Lexer->Program + line;
         int AddressFileIndex = CurrentFileIndex;
+        
+        if(StepThroughCode) {
+            size_t LineInFile = LOC->LineInFile;
+            printf("%zu: "SV_Fmt"\n", LineInFile, SV_Arg(Lexer->ProgramLines[CurrentFileIndex][LineInFile]));
+        }
         
         switch(LOC->Opcode)
         {
@@ -866,6 +888,33 @@ void Evaluate(String_View *FileNames, lexer *Lexer,
                 assert(0 && "This shouldn't happen");
             } break;
         }
+        
+        if(StepThroughCode) {
+            char buf[30];
+            int NeedToChoose = 1;
+            while(NeedToChoose)
+            {
+                String_View Option = sv_get_str(buf, 30);
+                NeedToChoose = 0;
+                if(sv_eq_ignorecase(Option, SV("help")) || sv_eq_ignorecase(Option, SV("h"))) {
+                    ShowStepCommands();
+                    NeedToChoose = 1;
+                }
+                else if(sv_eq_ignorecase(Option, SV("registers")) || sv_eq_ignorecase(Option, SV("r"))) {
+                    printf("ACC = %d, IX = %d\n", ACC, IX);
+                }
+                else if(sv_eq_ignorecase(Option, SV("continue")) || sv_eq_ignorecase(Option, SV("c"))) {
+                    StepThroughCode = 0;
+                }
+                else if(sv_eq_ignorecase(Option, SV("quit")) || sv_eq_ignorecase(Option, SV("q"))) {
+                    exit(0);
+                }
+                else if(!sv_eq(Option, SV_NULL) && sv_eq_ignorecase(Option, SV("next")) && sv_eq_ignorecase(Option, SV("n"))) {
+                    printf("Unkown command\n");
+                    NeedToChoose = 1;
+                }
+            }
+        }
     }
 }
 
@@ -894,6 +943,9 @@ int main(int argc, char **args)
             }
             else if(sv_eq_ignorecase(flag, SV("extra"))) {
                 Flags |= ALA_EXTRA;
+            }
+            else if(sv_eq_ignorecase(flag, SV("debug"))) {
+                Flags |= ALA_DEBUG;
             }
             else {
                 fprintf(stderr, "WARNING: Unknown flag '%s' ignored\n", args[i] + 1);
@@ -953,19 +1005,25 @@ int main(int argc, char **args)
         TotalLineCount += LineCount[FileIndex];
     }
     
-    tmp_cstr tc;
-    tc.Capacity = 1024,
-    tc.Cstr = (char *)malloc(1024);
+    String_View **Lines = PushArray(&Arena, InputDataCount, String_View *);
+    for(int i = 0; i < InputDataCount; i++)
+        Lines[i] = PushArray(&Arena, LineCount[i], String_View);
     
     line_map **LineMappings = PushArray(&Arena, InputDataCount, line_map *);
     for(int i = 0; i < InputDataCount; i++)
         LineMappings[i] = PushArray(&Arena, LineCount[i], line_map);
+    
     line_of_code *Program = PushArray(&Arena, TotalLineCount, line_of_code);
     symbol_table *SymbolTable = PushStruct(&Arena, symbol_table);
+    
+    tmp_cstr tc;
+    tc.Capacity = 1024,
+    tc.Cstr = (char *)malloc(1024);
     
     lexer Lexer = {
         .Arena = &Arena,
         .tc = &tc,
+        .ProgramLines = Lines,
         .Program = Program,
         .StartSymbol = 0,
         .StartLOC = 0,
