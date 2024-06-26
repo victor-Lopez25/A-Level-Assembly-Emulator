@@ -214,13 +214,21 @@ void ParseGeneralOperand(lexer *Lexer, size_t CurrentLine, String_View OperandTo
     }
 }
 
-line_of_code ParseInstruction(lexer *Lexer, size_t CurrentLine, String_View Line, int Opcode)
+line_of_code ParseInstruction(lexer *Lexer, int Flags, size_t CurrentLine, String_View Line, int Opcode)
 {
     line_of_code LOC = {0};
     LOC.LineInFile = CurrentLine;
     LOC.Opcode = Opcode;
     
     if(Opcode == IOP_INP || Opcode == IOP_OUT || Opcode == IOP_END || Opcode == IOP_RETURN) {
+        if(Opcode == IOP_RETURN && !IsSet(Flags, ALA_EXTRA)) {
+            fprintf(stderr,
+                    "\n"SV_Fmt"(%zu): ERROR: This instruction doesn't exist in A level assembly\n"
+                    "NOTE: To use this instruction, use the flag '-extra' to use this instruction",
+                    SV_Arg(*Lexer->File), CurrentLine);
+            exit(1);
+        }
+        
         if(Line.count > 0 && (*Line.data != '/' || *(Line.data + 1) != '/'))
         {
             fprintf(stderr, SV_Fmt"(%zu): ERROR: The operand '"SV_Fmt"' doesn't take an opcode\n", 
@@ -326,6 +334,14 @@ line_of_code ParseInstruction(lexer *Lexer, size_t CurrentLine, String_View Line
             
             case IOP_CALL:
             {
+                if(!IsSet(Flags, ALA_EXTRA)) {
+                    fprintf(stderr,
+                            "\n"SV_Fmt"(%zu): ERROR: This instruction doesn't exist in A level assembly\n"
+                            "NOTE: To use this instruction, use the flag '-extra' to use this instruction",
+                            SV_Arg(*Lexer->File), CurrentLine);
+                    exit(1);
+                }
+                
                 // only takes labels
                 if(*OperandToken.data == '#') {
                     fprintf(stderr, SV_Fmt"(%zu): ERROR: Invalid operand for "SV_Fmt"\n"
@@ -369,8 +385,8 @@ line_of_code ParseInstruction(lexer *Lexer, size_t CurrentLine, String_View Line
     return LOC;
 }
 
-size_t ParseCode(String_View Content, lexer *Lexer, line_map *LineMappings, 
-                 size_t CurrentLOC)
+size_t ParseCode(String_View Content, lexer *Lexer, int Flags,
+                 line_map *LineMappings, size_t CurrentLOC)
 {
     for(size_t CurrentLine = 0; Content.count > 0; CurrentLine++)
     {
@@ -428,7 +444,7 @@ size_t ParseCode(String_View Content, lexer *Lexer, line_map *LineMappings,
                 }
                 else {
                     line_of_code LOC = 
-                        ParseInstruction(Lexer, CurrentLine, Line, Opcode);
+                        ParseInstruction(Lexer, Flags, CurrentLine, Line, Opcode);
                     
                     Lexer->Program[CurrentLOC] = LOC;
                     ShouldIncLOC = 1;
@@ -472,7 +488,7 @@ size_t ParseCode(String_View Content, lexer *Lexer, line_map *LineMappings,
             }
             else {
                 line_of_code LOC = 
-                    ParseInstruction(Lexer, CurrentLine, Line, Opcode);
+                    ParseInstruction(Lexer, Flags, CurrentLine, Line, Opcode);
                 
                 Lexer->Program[CurrentLOC++] = LOC;
             }
@@ -826,13 +842,6 @@ void Evaluate(String_View *FileNames, lexer *Lexer,
             case IOP_CALL:
             {
                 AddressFileIndex = LOC->Label->FileIndex;
-                if(!IsSet(Flags, ALA_EXTRA)) {
-                    fprintf(stderr,
-                            "\n"SV_Fmt"(%zu): ERROR: This instruction doesn't exist in A level assembly\n"
-                            "NOTE: To use this instruction, use the flag '-extra' to use this instruction",
-                            SV_Arg(FileNames[AddressFileIndex]), LOC->LineInFile);
-                    exit(1);
-                }
                 
                 CheckJumpToAddress(LOC->LineInFile, LOC->Label->LineRef, "");
                 ReturnAddress = line;
@@ -845,13 +854,6 @@ void Evaluate(String_View *FileNames, lexer *Lexer,
             
             case IOP_RETURN:
             {
-                if(!IsSet(Flags, ALA_EXTRA)) {
-                    fprintf(stderr, "\n"SV_Fmt"(%zu): ERROR: This instruction doesn't exist in A level assembly\n"
-                            "NOTE: To use this instruction, use the flag '-extra' to use this instruction",
-                            SV_Arg(FileNames[CurrentFileIndex]), LOC->LineInFile);
-                    exit(1);
-                }
-                
                 line = ReturnAddress;
                 CurrentFileIndex = PreviousFileIndex;
             } break;
@@ -976,7 +978,7 @@ int main(int argc, char **args)
     {
         Lexer.FileIndex = FileIndex;
         Lexer.File = ValidFiles + FileIndex;
-        LOCCount = ParseCode(InputData[FileIndex], &Lexer, 
+        LOCCount = ParseCode(InputData[FileIndex], &Lexer, Flags,
                              LineMappings[FileIndex], LOCCount);
     }
     
